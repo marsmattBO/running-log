@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il Mio Diario di Corsa</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --ink: #1a1a18;
+    --paper: #f5f2eb;
+    --paper2: #ede9e0;
+    --accent: #c8410a;
+    --accent2: #2d6a4f;
+    --accent3: #1a4e8a;
+    --muted: #7a7468;
+    --rule: #d4cfc4;
+    --card: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.06);
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.04);
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    margin-bottom: 0.5rem;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: rgba(245,242,235,0.5);
+    font-family: 'DM Mono', monospace;
+  }
+  .header-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    margin-top: 1rem;
+    text-transform: uppercase;
+  }
+
+  /* STATS TILES */
+  .section { padding: 1.5rem 1.5rem; }
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .tile {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    padding: 1.1rem 1rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+  .tile:nth-child(1) { animation-delay: 0.05s; }
+  .tile:nth-child(2) { animation-delay: 0.1s; }
+  .tile:nth-child(3) { animation-delay: 0.15s; }
+  .tile:nth-child(4) { animation-delay: 0.2s; }
+
+  .tile-accent {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .tile-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+  .tile-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .tile-lbl {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* CHART SECTION */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    padding: 1.25rem 1rem;
+    margin-bottom: 10px;
+    animation: fadeUp 0.4s ease 0.25s both;
+  }
+  .chart-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1rem;
+  }
+  .ctab {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ctab.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .chart-wrap { height: 200px; position: relative; }
+
+  /* LOG TABLE */
+  .log-card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    animation: fadeUp 0.4s ease 0.3s both;
+  }
+  .log-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    transition: background 0.15s;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row:hover { background: var(--paper); }
+  .log-row.header {
+    background: var(--paper2);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .log-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .log-dist {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .log-pace {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+  .log-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 7px;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+  .badge-fast { background: #fef3ee; color: var(--accent); border: 1px solid #f5c5ae; }
+  .badge-z2   { background: #eef4f0; color: var(--accent2); border: 1px solid #aed4bc; }
+  .badge-easy { background: #eef1f7; color: var(--accent3); border: 1px solid #aec0d8; }
+  .badge-walk { background: var(--paper2); color: var(--muted); border: 1px solid var(--rule); }
+
+  /* NOTES */
+  .note-card {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 1.25rem 1.25rem;
+    margin-bottom: 10px;
+    animation: fadeUp 0.4s ease 0.35s both;
+  }
+  .note-card .section-title { color: rgba(245,242,235,0.4); border-color: rgba(245,242,235,0.1); }
+  .note-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(245,242,235,0.8);
+  }
+  .note-text strong { color: var(--accent); font-weight: 500; }
+
+  /* TREND BAR */
+  .trend-section { padding: 0 1.5rem 1.5rem; }
+  .trend-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    animation: fadeUp 0.4s ease 0.4s both;
+  }
+  .trend-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    width: 60px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .trend-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--rule);
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .trend-bar-fill {
+    height: 100%;
+    border-radius: 0;
+    transition: width 1s cubic-bezier(.23,1,.32,1);
+  }
+  .trend-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--ink);
+    width: 50px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  footer {
+    background: var(--paper2);
+    border-top: 1px solid var(--rule);
+    padding: 1rem 1.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Diario di allenamento</div>
+  <h1>Running<br>Log</h1>
+  <div class="header-sub">10 Marzo — 8 Maggio 2025</div>
+  <div class="header-badge">▶ In corso</div>
+</header>
+
+<!-- STATS -->
+<div class="section">
+  <div class="section-title">Statistiche globali</div>
+  <div class="tiles">
+    <div class="tile">
+      <div class="tile-accent" style="background:var(--accent)"></div>
+      <div class="tile-val">13</div>
+      <div class="tile-unit">uscite</div>
+    </div>
+    <div class="tile">
+      <div class="tile-accent" style="background:var(--accent2)"></div>
+      <div class="tile-val">61,5</div>
+      <div class="tile-unit">km totali</div>
+    </div>
+    <div class="tile">
+      <div class="tile-accent" style="background:var(--accent3)"></div>
+      <div class="tile-val">7,61</div>
+      <div class="tile-unit">km — distanza max</div>
+    </div>
+    <div class="tile">
+      <div class="tile-accent" style="background:#9b5de5"></div>
+      <div class="tile-val">5:46</div>
+      <div class="tile-unit">min/km — ritmo best</div>
+    </div>
+  </div>
+  <div class="tiles" style="grid-template-columns:1fr 1fr 1fr; gap:10px;">
+    <div class="tile">
+      <div class="tile-accent" style="background:var(--accent)"></div>
+      <div class="tile-val" style="font-size:1.4rem">4,73</div>
+      <div class="tile-unit">km medi</div>
+    </div>
+    <div class="tile">
+      <div class="tile-accent" style="background:var(--accent2)"></div>
+      <div class="tile-val" style="font-size:1.4rem">6:10</div>
+      <div class="tile-unit">ritmo medio</div>
+    </div>
+    <div class="tile">
+      <div class="tile-accent" style="background:var(--accent3)"></div>
+      <div class="tile-val" style="font-size:1.4rem">+107%</div>
+      <div class="tile-unit">crescita distanza</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="section" style="padding-top:0">
+  <div class="section-title">Andamento</div>
+  <div class="chart-card">
+    <div class="chart-tabs">
+      <button class="ctab active" onclick="switchTab('dist',this)">Distanza</button>
+      <button class="ctab" onclick="switchTab('pace',this)">Ritmo</button>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="distC"></canvas>
+      <canvas id="paceC" style="display:none"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- TREND BARS -->
+<div class="trend-section">
+  <div class="section-title" style="padding: 0 0 0.75rem; border-bottom:1px solid var(--rule); margin-bottom:1rem; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--muted);">Volume settimanale (km)</div>
+  <div id="weekBars"></div>
+</div>
+
+<!-- NOTE COACH -->
+<div class="section" style="padding-top:0">
+  <div class="note-card">
+    <div class="section-title">Note allenamento</div>
+    <p class="note-text">
+      Progressione <strong>solida e costante</strong> in poco più di un mese. La distanza è più che raddoppiata (da 3,67 a 7,61 km) senza accelerazioni rischiose. Stai già differenziando le uscite — Z2, ritmo sostenuto, recupero attivo — un segnale di maturità atletica precoce.<br><br>
+      Il trekking del weekend si integra come <strong>recupero attivo</strong> prezioso. Prossimo obiettivo: uscita lunga verso i <strong>9–10 km</strong> entro fine giugno, mantenendo 2 uscite/settimana.
+    </p>
+  </div>
+</div>
+
+<!-- LOG -->
+<div class="section" style="padding-top:0">
+  <div class="section-title">Registro uscite</div>
+  <div class="log-card">
+    <div class="log-row header">
+      <span>Data</span>
+      <span>Dist.</span>
+      <span>Ritmo</span>
+      <span>Tipo</span>
+    </div>
+    <div id="logRows"></div>
+  </div>
+</div>
+
+<footer>
+  <span>Running Log 2025</span>
+  <span>13 uscite · 61,5 km</span>
+</footer>
+
+<script>
+const runs = [
+  { date:'10 mar', dist:3.67, pace:'6:35', type:'easy' },
+  { date:'23 mar', dist:4.04, pace:'6:45', type:'easy' },
+  { date:'3 apr',  dist:4.36, pace:'6:36', type:'easy' },
+  { date:'7 apr',  dist:5.84, pace:'5:51', type:'fast' },
+  { date:'10 apr', dist:4.24, pace:'5:53', type:'fast' },
+  { date:'16 apr', dist:4.18, pace:'5:47', type:'fast' },
+  { date:'18 apr', dist:4.09, pace:'7:01', type:'walk' },
+  { date:'21 apr', dist:4.13, pace:'5:46', type:'fast' },
+  { date:'23 apr', dist:5.02, pace:'6:07', type:'easy' },
+  { date:'27 apr', dist:6.59, pace:'6:09', type:'easy' },
+  { date:'29 apr', dist:7.10, pace:'6:09', type:'easy' },
+  { date:'6 mag',  dist:4.60, pace:'5:49', type:'fast' },
+  { date:'8 mag',  dist:7.61, pace:'6:19', type:'z2'   },
+];
+
+const badgeMap = {
+  fast: ['badge-fast','Sostenuto'],
+  z2:   ['badge-z2','Zona 2'],
+  easy: ['badge-easy','Aerobico'],
+  walk: ['badge-walk','Recupero'],
+};
+
+// Log rows
+const logEl = document.getElementById('logRows');
+runs.forEach(r => {
+  const [cls, label] = badgeMap[r.type];
+  logEl.innerHTML += `
+    <div class="log-row">
+      <span class="log-date">${r.date}</span>
+      <span class="log-dist">${r.dist.toFixed(2)} <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:400;color:var(--muted)">km</span></span>
+      <span class="log-pace">${r.pace} <span style="color:var(--muted);font-size:10px">min/km</span></span>
+      <span><span class="log-badge ${cls}">${label}</span></span>
+    </div>`;
+});
+
+// Week bars
+const weeks = [
+  { label: 'Mar w2', km: 3.67 },
+  { label: 'Mar w4', km: 4.04 },
+  { label: 'Apr w1', km: 4.36 + 5.84 },
+  { label: 'Apr w2', km: 4.24 + 4.18 + 4.09 },
+  { label: 'Apr w3', km: 4.13 + 5.02 },
+  { label: 'Apr w4', km: 6.59 + 7.10 },
+  { label: 'Mag w1', km: 4.60 + 7.61 },
+];
+const maxKm = Math.max(...weeks.map(w => w.km));
+const colors = ['#c8410a','#c8410a','#2d6a4f','#2d6a4f','#1a4e8a','#1a4e8a','#9b5de5'];
+const barsEl = document.getElementById('weekBars');
+weeks.forEach((w, i) => {
+  const pct = (w.km / maxKm * 100).toFixed(1);
+  barsEl.innerHTML += `
+    <div class="trend-row">
+      <span class="trend-label">${w.label}</span>
+      <div class="trend-bar-bg"><div class="trend-bar-fill" style="width:0%;background:${colors[i]}" data-w="${pct}"></div></div>
+      <span class="trend-val">${w.km.toFixed(1)} km</span>
+    </div>`;
+});
+setTimeout(() => {
+  document.querySelectorAll('.trend-bar-fill').forEach(el => {
+    el.style.width = el.dataset.w + '%';
+  });
+}, 200);
+
+// Charts
+const labels = runs.map(r => r.date);
+const distances = runs.map(r => r.dist);
+const paceNums = runs.map(r => {
+  const [m,s] = r.pace.split(':').map(Number);
+  return m + s/60;
+});
+
+const sharedOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'DM Mono' }, bodyFont: { family: 'DM Mono' }, callbacks: {} } },
+  scales: {
+    x: { ticks: { font: { family: 'DM Mono', size: 9 }, color: '#7a7468', maxRotation: 45 }, grid: { color: '#e8e4da' } },
+    y: { ticks: { font: { family: 'DM Mono', size: 9 }, color: '#7a7468' }, grid: { color: '#e8e4da' } }
+  }
+};
+
+new Chart(document.getElementById('distC'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      data: distances,
+      backgroundColor: distances.map(d => d >= 7 ? '#2d6a4f' : d >= 5.5 ? '#5a9e7a' : '#9fcdb5'),
+      borderRadius: 2,
+      borderSkipped: false,
+    }]
+  },
+  options: { ...sharedOpts, scales: { ...sharedOpts.scales, y: { ...sharedOpts.scales.y, min: 0, max: 9, title: { display: true, text: 'km', font: { family: 'DM Mono', size: 9 }, color: '#7a7468' } } } }
+});
+
+const paceChart = new Chart(document.getElementById('paceC'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      data: paceNums,
+      borderColor: '#c8410a',
+      backgroundColor: 'rgba(200,65,10,0.07)',
+      tension: 0.35,
+      pointRadius: 4,
+      pointBackgroundColor: paceNums.map(p => p < 5.9 ? '#2d6a4f' : p > 6.5 ? '#c8410a' : '#1a4e8a'),
+      pointBorderColor: 'transparent',
+      fill: true,
+    }]
+  },
+  options: {
+    ...sharedOpts,
+    scales: {
+      ...sharedOpts.scales,
+      y: {
+        reverse: true, min: 5.3, max: 7.3,
+        ticks: {
+          font: { family: 'DM Mono', size: 9 }, color: '#7a7468',
+          callback: v => { const m=Math.floor(v),s=Math.round((v-m)*60); return m+':'+(s<10?'0':'')+s; }
+        },
+        grid: { color: '#e8e4da' }
+      }
+    },
+    plugins: {
+      ...sharedOpts.plugins,
+      tooltip: { ...sharedOpts.plugins.tooltip, callbacks: { label: ctx => { const v=ctx.raw,m=Math.floor(v),s=Math.round((v-m)*60); return m+':'+(s<10?'0':'')+s+' min/km'; } } }
+    }
+  }
+});
+
+function switchTab(type, btn) {
+  document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('distC').style.display = type === 'dist' ? 'block' : 'none';
+  document.getElementById('paceC').style.display = type === 'pace' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
